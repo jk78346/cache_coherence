@@ -23,11 +23,11 @@
 	* `code` - base code for the problem
   * *`bin`* - binaries are generated in this folder
   * *`datasets`* - sample data sets for the code
-  * *`include`* - *.h libraries to be included in the code
+  * *`include`* - *.h header files to be included in the code
   * *`obj`* - *.o object files generated here for linking
   * *`src`* - source code resides in this directory
   * *`Makefile`* - a file that compiles the base code
-  * `doc` - Documents describes the Machine Problem
+  * `doc`* - Documents describes the Machine Problem
 * `02_MP2`
   * `to be added` 
 * `03_FinalProject`
