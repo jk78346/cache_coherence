@@ -1,10 +1,10 @@
-# Architecture Of Parallel Computers ECE 492/506 Projects and Material
+# Architecture Of Parallel Computers ECE 506 Projects and Material
 
 This repository holds all machine problems, projects, and supplementary material for the ECE 506 course.
 
 ## Course Description
 
-The need for parallel and massively parallel computers. Taxonomy of parallel computer architecture, and programming models for parallel architectures. Example parallel algorithms. Shared-memory vs. distributed-memory architectures. Correctness and performance issues. Cache coherence and memory consistency. Bus-based and scalable directory-based multiprocessors. Interconnection-network topologies and switch design. Brief overview of advanced topics such as multiprocessor pre-fetching and speculative parallel execution. Credit is not allowed for more than one course in this set: ECE 406, ECE 506, CSC 406.
+The need for parallel and massively parallel computers. Taxonomy of parallel computer architecture, and programming models for parallel architectures. Example parallel algorithms. Shared-memory vs. distributed-memory architectures. Correctness and performance issues. Cache coherence and memory consistency. Bus-based and scalable directory-based multiprocessors. Interconnection-network topologies and switch design. Brief overview of advanced topics such as multiprocessor pre-fetching and speculative parallel execution. Credit is not allowed for more than one course in this set: ECE 492, ECE 506.
 
 ## Please note the following
 

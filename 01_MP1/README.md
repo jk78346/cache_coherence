@@ -1,10 +1,10 @@
 # Machine Problem 1
 
-
 ## Motivation
 
-Graph processing is widely used to solve big data problems in multiple domains, such as social networks, protein interactions in bioinformatics and web graph hierarchies. The cost of pre-processing (building the graph data structure) in many cases dominates the algorithm execution step. This calls into question the benefit of proposed algorithmic optimization that relies on extensive preprocessing. For example, fast breadth-first search (BFS) algorithms, rely on Compressed Sparse Row (CSR) representation of the graph. The processes of reading the graph list into a CSR representation and forming the adjacency list usually takes up to 90% of the execution time!
-**In this Project you will work on three versions of this preprocessing stage in building Compressed Sparse Row (CSR), using Radix sort, a serial version, an OpenMP version. Provided with a framework that sorts and builds a CSR with a baseline model using count sort.**
+Graph processing is widely used to solve big data problems in multiple domains, such as social networks, protein interactions in bioinformatics and web graph hierarchies. The cost of pre-processing (building the graph data structure) in many cases dominates the algorithm execution step. This calls into question the benefit of proposed algorithmic optimization that relies on extensive preprocessing. For example, fast breadth-first search (BFS) algorithms, rely on Compressed Sparse Row (CSR) representation of the graph. The processes of reading the graph list into a CSR representation and forming the adjacency list usually takes up to 90% of the execution time!.
+
+**In this Project you will work on two versions of this preprocessing stage in building Compressed Sparse Row (CSR), using Radix sort, a serial version, an OpenMP version. Provided with a framework that sorts and builds a CSR with a baseline model using count sort.**
 
 ## Please note the following
 
@@ -39,7 +39,7 @@ Graph processing is widely used to solve big data problems in multiple domains, 
 ## Details
 ### Benchmark format
 * Edge lists are provided in textual format and they are formatted as source → destination separated by a tab.
-  *Src*  →  *Dest*
+*Src*  →  *Dest*
 
 ### Initial setup
 1. After cloning the repository. enter the directory
