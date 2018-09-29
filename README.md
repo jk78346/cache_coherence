@@ -40,6 +40,6 @@ This will be added later.
 ### Initial setup
 1. Clone the repository. enter the directory and initialize the submodules
   ```bash
-  git https://github.ncsu.edu/atmughra/ECE-506-492-Projects.git
+  git clone https://github.ncsu.edu/atmughra/ECE-506-492-Projects.git
   cd ECE-506-492-Projects
   ```
