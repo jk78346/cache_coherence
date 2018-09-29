@@ -46,7 +46,11 @@ Graph processing is widely used to solve big data problems in multiple domains, 
   ```bash
   cd code
   ```
-1. compile the code
+2. compile the code
+  ```bash
+  make
+  ```
+3. run the code
   ```bash
   make run
   ```
