@@ -40,8 +40,6 @@ Graph processing is widely used to solve big data problems in multiple domains, 
 ### Benchmark format
 * Edge lists are provided in textual format and they are formatted as source → destination separated by a tab.
   *Src*  →  *Dest*
-  30    3
-  6     11
 
 ### Initial setup
 1. After cloning the repository. enter the directory
