@@ -1,4 +1,4 @@
-# Fall 2018 Architecture Of Parallel Computers ECE 492/506 Projects and Material
+# Architecture Of Parallel Computers ECE 492/506 Projects and Material
 
 This repository holds all machine problems, projects, and supplementary material for the ECE 506 course.
 
