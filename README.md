@@ -9,8 +9,8 @@ The need for parallel and massively parallel computers. Taxonomy of parallel com
 ## Please note the following
 
 * **It is recommended to always to go back to the book as a reference.**
-    *(NEW) Fundamentals of Parallel Multi-core Architecture (Chapman & Hall/CRC Computational Science) 1st Edition-2015 by Yan Solihin (Author).
-    *Fundamentals of Parallel Computer Architecture Paperback-2009 by Yan Solihin (Author).
+    * (NEW) Fundamentals of Parallel Multi-core Architecture (Chapman & Hall/CRC Computational Science) 1st Edition-2015 by Yan Solihin (Author).
+    * Fundamentals of Parallel Computer Architecture Paperback-2009 by Yan Solihin (Author).
 * For now this repository is for FALL 2018 Class any future updates are the responsibility of future TAs if they want to use it.
 * This framework developed on Ubuntu-Linux. It is your responsibility to make it work on windows or othe system, though it will run on any Linux machine that has a terminal.
 
