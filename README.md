@@ -27,7 +27,7 @@
   * *`obj`* - *.o object files generated here for linking
   * *`src`* - source code resides in this directory
   * *`Makefile`* - a file that compiles the base code
-  * `doc`* - Documents describes the Machine Problem
+  * `doc` - Documents describes the Machine Problem
 * `02_MP2`
   * `to be added` 
 * `03_FinalProject`
