@@ -77,14 +77,16 @@ void   loadEdgeArray(const char * fname, struct Edge *edgeArray){
 
         
         i = fscanf(pText, "%d\t%d\n", &src, &dest);
-
+        if( i == EOF ) 
+           break;
         edgeArray[size].src = src;
         edgeArray[size].dest = dest;
                  
         size++;
-        if( i == EOF ) 
-           break;
+
         }
+        
+      
 
         fclose(pText);
       
@@ -113,17 +115,22 @@ void   loadEdgeArrayInfo(const char * fname, int *numOfVertices, int *numOfEdges
         size++;
         
         i = fscanf(pText, "%d\t%d\n", &src, &dest);
-     
-        num_vertices = maxTwoIntegers(num_vertices,maxTwoIntegers(src, dest));
-               
-        
         if( i == EOF ) 
            break;
+
+        num_vertices = maxTwoIntegers(num_vertices,maxTwoIntegers(src, dest));
+               
         }
 
+     
+        
+        
+       
         fclose(pText);
 
         *numOfVertices = num_vertices+1;
         *numOfEdges = size-1;
 
 }
+
+

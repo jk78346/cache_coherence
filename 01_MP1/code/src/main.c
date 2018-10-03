@@ -21,9 +21,9 @@ void printMessageWithtime(const char * msg, double time){
 int main(void) {
 
     
-    // const char * fname = "./datasets/test/test.txt";
+    const char * fname = "./datasets/test/test.txt";
     // const char * fname = "./datasets/wiki-vote/wiki-Vote.txt";
-    const char * fname = "./datasets/facebook/facebook_combined.txt";
+    // const char * fname = "./datasets/RMAT/RMAT22";
     
     int numOfVertices = 0;
     int numOfEdges = 0;
@@ -59,11 +59,11 @@ int main(void) {
     mapVertices(vertexArray, sortedEdgeArray, numOfVertices, numOfEdges);
 
     Start(timer);
-    bfs(107, vertexArray, sortedEdgeArray, numOfVertices, numOfEdges);
+    bfs(6, vertexArray, sortedEdgeArray, numOfVertices, numOfEdges);
     Stop(timer);
     printMessageWithtime("Time BFS (Seconds)",Seconds(timer));
 
-    // free(sortedEdgeArray); generates error
+    free(sortedEdgeArray);
     free(vertexArray);
     free(edgeArray);
     
