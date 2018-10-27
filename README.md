@@ -30,8 +30,32 @@ The need for parallel and massively parallel computers. Taxonomy of parallel com
     * `src` - source code resides in this directory
     * `Makefile` - a file that compiles the base code
   * `doc` - Documents describes the Machine Problem
-* `02_MP2`
-  * `to be added` 
+* `02_MP2` - Machine Problem 2
+  * `code` - base code for the problem
+    * `bin`- binaries are generated in this folder
+    * `datasets` - sample data sets for the code
+    * `include` - [.h] header files to be included in the code
+        * `bfs.h` - push/pull breadth first search implementation to be prallelized 
+        * `graph.h` - graph abstraction contains edgelists and inverse edgelists with their mappings 
+        * `bitmap.h` - bitmap implementaion not multithread safe
+        * `arrayQueue.h` - simple array based queue not multithread safe  
+        * `edgelist.h`
+        * `sort.h`
+        * `timer.h`
+        * `vertex.h`
+    * `obj` - [.o] object files generated here for linking
+    * `src` - source code resides in this directory
+        * `bfs.c` - push/pull breadth first search implementation to be prallelized 
+        * `graph.c` - graph abstraction contains edgelists and inverse edgelists with their mappings
+        * `bitmap.c` - bitmap implementaion not multithread safe
+        * `arrayQueue.c` - simple array based queue not multithread safe 
+        * `edgelist.c`
+        * `sort.c` 
+        * `timer.c`
+        * `vertex.c`
+        * `main.c` - **your parallel/serial BFS called here**
+    * `Makefile` - a file that compiles the base code
+  * `doc` - Documents describes the Machine Problem
 * `03_FinalProject`
   * `to be added`
 
