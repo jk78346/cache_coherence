@@ -44,7 +44,7 @@ In the previous machine problem, we showed how to build an optimized memory frie
 * This framework developed on Ubuntu-Linux. It is your responsibility to make it work on windows or other systems, though it will run on any Linux machine that has a terminal.
 
 ## Organization
-* `01_MP1` - Machine Problem 1
+* `02_MP2` - Machine Problem 2
   * `code` - base code for the problem
     * `bin`- binaries are generated in this folder
     * `datasets` - sample data sets for the code
