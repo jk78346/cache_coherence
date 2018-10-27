@@ -65,15 +65,6 @@ void enArrayQueueWithBitmap (struct ArrayQueue *q, __u32 k){
 }
 
 
-void enArrayQueueWithBitmapAtomic (struct ArrayQueue *q, __u32 k){
-
-	__u32 local_q_tail = __sync_fetch_and_add(&q->tail,1);
-	q->queue[local_q_tail] = k;
-	setBitAtomic(q->q_bitmap, k);
-
-}
-
-
 void enArrayQueueDelayed (struct ArrayQueue *q, __u32 k){
 
 	q->queue[q->tail_next] = k;
@@ -86,14 +77,6 @@ void enArrayQueueDelayedWithBitmap (struct ArrayQueue *q, __u32 k){
 	q->queue[q->tail_next] = k;
 	setBit(q->q_bitmap_next, k);
 	q->tail_next++;
-
-}
-
-void enArrayQueueDelayedWithBitmapAtomic (struct ArrayQueue *q, __u32 k){
-
-	__u32 local_q_tail_next = __sync_fetch_and_add(&q->tail_next,1);
-	setBitAtomic(q->q_bitmap, k);
-	q->queue[local_q_tail_next] = k;
 
 }
 
