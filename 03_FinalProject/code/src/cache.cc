@@ -52,8 +52,9 @@ Cache::Cache(int s,int a,int b )
 /**you might add other parameters to Access()
 since this function is an entry point 
 to the memory hierarchy (i.e. caches)**/
-void Cache::Access(ulong addr,uchar op)
+ulong Cache::Access(ulong addr,uchar op)
 {
+	ulong busAction;
 	currentCycle++;/*per cache global counter to maintain LRU order 
 			among cache ways, updated on every cache access*/
     if(op == 'w') writes++;
@@ -62,19 +63,37 @@ void Cache::Access(ulong addr,uchar op)
 	cacheLine * line = findLine(addr);
 	if(line == NULL)/*miss*/
 	{
-		if(op == 'w') writeMisses++;
-		else readMisses++;
-
 		cacheLine *newline = fillLine(addr);
-   		if(op == 'w') newline->setFlags(DIRTY);    
-		
+   		if(op == 'w'){
+   			writeMisses++;
+			busAction = BusRdX;
+			BusRdX_cnt++;
+   			newline->setFlags(MODIFIED);    
+		}else{ // op == 'r'
+			readMisses++;
+			busAction = BusRd;
+			mem_trans_cnt++;
+			newline->setFlags(SHARED);
+		}
 	}
 	else
 	{
 		/**since it's a hit, update LRU and update dirty flag**/
 		updateLRU(line);
-		if(op == 'w') line->setFlags(DIRTY);
+		if(op == 'w'){
+			if(line->getFlags() == SHARED){
+		 		line->setFlags(MODIFIED);
+				mem_trans_cnt++; // S -> M : you need to allocat a copy and post BusRdX
+		 		busAction = BusRdX;
+		 		BusRdX_cnt++;
+			}else{
+				busAction = NONE;
+			}
+		}else{
+			busAction = NONE;
+		}
 	}
+	return busAction;
 }
 
 /*look up line*/
@@ -138,19 +157,21 @@ cacheLine *Cache::findLineToReplace(ulong addr)
 /*allocate a new line*/
 cacheLine *Cache::fillLine(ulong addr)
 { 
-   ulong tag;
+	ulong tag;
   
-   cacheLine *victim = findLineToReplace(addr);
-   assert(victim != 0);
-   if(victim->getFlags() == DIRTY) writeBack(addr);
-    	
-   tag = calcTag(addr);   
-   victim->setTag(tag);
-   victim->setFlags(VALID);    
+	cacheLine *victim = findLineToReplace(addr);
+	assert(victim != 0);
+	if(victim->getFlags() == MODIFIED){
+   		writeBack(addr);
+   		mem_trans_cnt++;
+	}
+	tag = calcTag(addr);   
+	victim->setTag(tag);
+   // victim->setFlags(VALID);    
    /**note that this cache line has been already 
       upgraded to MRU in the previous function (findLineToReplace)**/
 
-   return victim;
+	return victim;
 }
 
 void Cache::printStats(uint id)
@@ -170,4 +191,37 @@ void Cache::printStats(uint id)
 	printf("10. number of invalidations:			%lu\n", invalid_cnt);
 	printf("11. number of flushes:				%lu\n", flushes_cnt);
 	printf("12. number of BusRdX:				%lu\n", BusRdX_cnt);
+}
+
+void Cache::snoopBus(ulong busAction, ulong addr){
+	cacheLine * line = findLine(addr);
+	ulong status;
+	if(line != NULL){ // snoop bus action on addr that I have valid copy in my cache
+		status = line->getFlags();
+		if(status == MODIFIED){
+			if(busAction == BusRd){ // M -> S
+				line->setFlags(SHARED);
+				writeBacks++;
+				mem_trans_cnt++;
+				iterv_cnt++;
+			}else if(busAction == BusRdX){ // M-> I
+				line->invalidate();
+				writeBacks++;	//dirty has to be write back for consistency when invalidate
+				invalid_cnt++;
+			}else{
+				printf("undefined bus action: %lu\n", busAction);
+				exit(0);
+			}
+			// ideally do flush from cache to memory
+			flushes_cnt++;
+			mem_trans_cnt++;
+		}else if(status == SHARED){
+			if(busAction == BusRdX){ // S-> I
+				line->invalidate();
+				invalid_cnt++;
+			}
+		}else if(status == INVALID){
+			return;
+		}
+	}
 }

@@ -15,8 +15,16 @@ typedef unsigned int uint;
 /****add new states, based on the protocol****/
 enum{
 	INVALID = 0,
-	VALID,
-	DIRTY
+	SHARED,
+	MODIFIED
+};
+
+// define bus action (MSI)
+enum{
+   NONE = 0,
+   BusRd,
+   BusRdX,
+   Flush
 };
 
 class cacheLine 
@@ -48,7 +56,7 @@ protected:
    //add coherence counters here///
    ulong c2c_cnt;    //cache-to-cache transfers
    ulong mem_trans_cnt;    //memory transactions
-   ulong iterv_cnt;     //interventions
+   ulong iterv_cnt;     //interventions (E/M to S state)
    ulong invalid_cnt;   //invalidations
    ulong flushes_cnt;
    ulong BusRdX_cnt;
@@ -75,14 +83,14 @@ public:
    ulong getWB(){return writeBacks;}
    
    void writeBack(ulong)   {writeBacks++;}
-   void Access(ulong,uchar);
+   ulong Access(ulong,uchar);
    void printStats(uint id);
    void updateLRU(cacheLine *);
 
    //******///
    //add other functions to handle bus transactions///
    //******///
-
+   void snoopBus(ulong, ulong);
 };
 
 #endif

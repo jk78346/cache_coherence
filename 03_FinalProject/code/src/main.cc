@@ -29,6 +29,8 @@ int main(int argc, char *argv[])
 	unsigned char op;
 	unsigned long addr;
 
+	unsigned long busAction; // a global behavior
+
 	if(argv[1] == NULL){
 		 printf("input format: ");
 		 printf("./smp_cache <cache_size> <assoc> <block_size> <num_processors> <protocol> <trace_file> \n");
@@ -49,7 +51,17 @@ int main(int argc, char *argv[])
 	//**printf("===== Simulator configuration =====\n");**//
 	//*******print out simulator configuration here*******//
 	//****************************************************//
-
+	printf("===== 506 Personal information =====\n");
+	printf("Kuan-Chieh Hsu\n");
+	printf("200259954\n");
+	printf("ECE492 Students? NO\n");
+	printf("===== 506 SMP Simulator configuration =====\n");
+	printf("L1_SIZE: %d\n", cache_size);
+	printf("L1_ASSOC: %d\n", cache_assoc);
+	printf("L1_BLOCKSIZE: %d\n", blk_size);
+	printf("NUMBER OF PROCESSORS: %d\n", num_processors);
+	printf("COHERENCE PROTOCOL: %s\n", (protocol == 0)?"MSI":((protocol == 1)?"MESI":((protocol ==2)?"Dragon":"--")));
+	printf("TRACE FILE: %s\n", fname);
  
 	//*********************************************//
         //*****create an array of caches here**********//
@@ -75,8 +87,29 @@ int main(int argc, char *argv[])
 		proc_id = atoi(strtok(line, delimiter));
 		op      = strtok(NULL, delimiter)[0];	
 		sscanf(((string)(strtok(NULL, delimiter))).c_str(), "%lx", &addr);
-		printf("pro_id: %d, op: %c, addr: %lx\n", proc_id, op, addr);
-		myCaches[proc_id]->Access(addr, op);
+		// printf("proc_id: %d, op: %c, addr: %lx\n", proc_id, op, addr);
+		busAction = myCaches[proc_id]->Access(addr, op);
+		// printf("proc_id: %d, addr: %lx, op: %c, busAction: %lu\n", proc_id, addr, op, busAction);
+		// for this moment, all other caches can snoop the bus to react 
+		// since no state transition if no access from any proc.
+		if(busAction != NONE){ // other processors have to snoop bus and react 
+			for(int i = 0 ; i < num_processors ; i++){
+				if(i != proc_id){
+					myCaches[i]->snoopBus(busAction, addr);
+				}
+			}
+		}
+		// if(busAction != NONE){
+		// 	for(int i = 0 ; i < num_processors ; i++){
+		// 		printf("Cache[%d]:", i);
+		// 		printf("%3lu ", myCaches[i]->c2c_cnt);
+		// 		printf("%3lu ", myCaches[i]->mem_trans_cnt);
+		// 		printf("%3lu ", myCaches[i]->iterv_cnt);
+		// 		printf("%3lu ", myCaches[i]->invalid_cnt);
+		// 		printf("%3lu ", myCaches[i]->flushes_cnt);
+		// 		printf("%3lu\n", myCaches[i]->BusRdX_cnt);
+		// 	}
+		// }
 	}
 
 	fclose(pFile);
@@ -86,17 +119,6 @@ int main(int argc, char *argv[])
 	//********************************//
 	//print out all caches' statistics //
 	//********************************//
-	printf("===== 506 Personal information =====\n");
-	printf("Kuan-Chieh Hsu\n");
-	printf("200259954\n");
-	printf("ECE492 Students? NO\n");
-	printf("===== 506 SMP Simulator configuration =====\n");
-	printf("L1_SIZE: %d\n", cache_size);
-	printf("L1_ASSOC: %d\n", cache_assoc);
-	printf("L1_BLOCKSIZE: %d\n", blk_size);
-	printf("NUMBER OF PROCESSORS: %d\n", num_processors);
-	printf("COHERENCE PROTOCOL: %s\n", (protocol == 0)?"MSI":((protocol == 1)?"MESI":((protocol ==2)?"Dragon":"--")));
-	printf("TRACE FILE: %s\n", fname);
 	for(int i = 0 ; i < num_processors ; i++){
 		myCaches[i]->printStats(i);
 	}
