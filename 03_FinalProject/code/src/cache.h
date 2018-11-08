@@ -46,6 +46,12 @@ protected:
 
    //******///
    //add coherence counters here///
+   ulong c2c_cnt;    //cache-to-cache transfers
+   ulong mem_trans_cnt;    //memory transactions
+   ulong iterv_cnt;     //interventions
+   ulong invalid_cnt;   //invalidations
+   ulong flushes_cnt;
+   ulong BusRdX_cnt;
    //******///
 
    cacheLine **cache;
@@ -70,7 +76,7 @@ public:
    
    void writeBack(ulong)   {writeBacks++;}
    void Access(ulong,uchar);
-   void printStats();
+   void printStats(uint id);
    void updateLRU(cacheLine *);
 
    //******///

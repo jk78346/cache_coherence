@@ -3,6 +3,7 @@
 ********************************************************/
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <assert.h>
 #include "cache.h"
 using namespace std;
@@ -24,7 +25,10 @@ Cache::Cache(int s,int a,int b )
    //*******************//
    //initialize your counters here//
    //*******************//
- 
+   c2c_cnt = mem_trans_cnt = iterv_cnt = 0;
+   invalid_cnt = flushes_cnt = BusRdX_cnt = 0;
+
+
    tagMask =0;
    for(i=0;i<log2Sets;i++)
    {
@@ -52,8 +56,7 @@ void Cache::Access(ulong addr,uchar op)
 {
 	currentCycle++;/*per cache global counter to maintain LRU order 
 			among cache ways, updated on every cache access*/
-        	
-	if(op == 'w') writes++;
+    if(op == 'w') writes++;
 	else          reads++;
 	
 	cacheLine * line = findLine(addr);
@@ -150,9 +153,21 @@ cacheLine *Cache::fillLine(ulong addr)
    return victim;
 }
 
-void Cache::printStats()
+void Cache::printStats(uint id)
 { 
-	printf("===== Simulation results      =====\n");
+	printf("============ Simulation results (Cache %d) ============\n", id);
 	/****print out the rest of statistics here.****/
 	/****follow the ouput file format**************/
+	printf("01. number of reads:				%lu\n", reads);
+	printf("02. number of read misses:			%lu\n", readMisses);
+	printf("03. number of writes:				%lu\n", writes);
+	printf("04. number of write misses:			%lu\n", writeMisses);
+	printf("05. total miss rate:				%4.2f%%\n", ((double)(readMisses + writeMisses)/(double)(reads + writes))*100 );
+	printf("06. number of writebacks:			%lu\n", writeBacks);
+	printf("07. number of cache-to-cache transfers:		%lu\n", c2c_cnt);
+	printf("08. number of memory transactions:		%lu\n", mem_trans_cnt);
+	printf("09. number of interventions:			%lu\n", iterv_cnt);
+	printf("10. number of invalidations:			%lu\n", invalid_cnt);
+	printf("11. number of flushes:				%lu\n", flushes_cnt);
+	printf("12. number of BusRdX:				%lu\n", BusRdX_cnt);
 }
