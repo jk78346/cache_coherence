@@ -1,0 +1,8 @@
+2,4c2,4
+< FirstName (MiddleNames) LastName (Change it to your own name)
+< UnityID (Change it to your own UID)
+< ECE492 Students? YES/NO (Change it according to your own section)
+---
+> Kuan-Chieh Hsu
+> 200259954
+> ECE492 Students? NO

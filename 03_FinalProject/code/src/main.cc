@@ -45,7 +45,6 @@ int main(int argc, char *argv[])
 	int protocol   = atoi(argv[5]);	 /*0:MSI, 1:MESI, 2:Dragon*/
 	char *fname =  (char *)malloc(20);
  	fname = argv[6];
-
 	
 	//****************************************************//
 	//**printf("===== Simulator configuration =====\n");**//
@@ -61,7 +60,7 @@ int main(int argc, char *argv[])
 	printf("L1_BLOCKSIZE: %d\n", blk_size);
 	printf("NUMBER OF PROCESSORS: %d\n", num_processors);
 	printf("COHERENCE PROTOCOL: %s\n", (protocol == 0)?"MSI":((protocol == 1)?"MESI":((protocol ==2)?"Dragon":"--")));
-	printf("TRACE FILE: %s\n", fname);
+	printf("TRACE FILE: %.27s\n", &fname[3]);
  
 	//*********************************************//
         //*****create an array of caches here**********//
