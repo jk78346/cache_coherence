@@ -64,12 +64,13 @@ ulong Cache::Access(ulong addr,uchar op)
 	if(line == NULL)/*miss*/
 	{
 		cacheLine *newline = fillLine(addr);
-   		if(op == 'w'){
+   		if(op == 'w'){ // I -> M
    			writeMisses++;
+   			mem_trans_cnt++;
 			busAction = BusRdX;
 			BusRdX_cnt++;
    			newline->setFlags(MODIFIED);    
-		}else{ // op == 'r'
+		}else{ // op == 'r'  // I -> S
 			readMisses++;
 			busAction = BusRd;
 			mem_trans_cnt++;
@@ -83,9 +84,9 @@ ulong Cache::Access(ulong addr,uchar op)
 		if(op == 'w'){
 			if(line->getFlags() == SHARED){
 		 		line->setFlags(MODIFIED);
-				mem_trans_cnt++; // S -> M : you need to allocat a copy and post BusRdX
-		 		busAction = BusRdX;
-		 		BusRdX_cnt++;
+				mem_trans_cnt++; // S -> M : memory controller provide data anyway since it cannot tell if (1) S -> M or (2) I -> M
+				busAction = BusRdX;
+		 		BusRdX_cnt++;	// in this case, it generate BusRdX, no distinguish between I -> M's BusRdX
 			}else{
 				busAction = NONE;
 			}
@@ -167,7 +168,7 @@ cacheLine *Cache::fillLine(ulong addr)
 	}
 	tag = calcTag(addr);   
 	victim->setTag(tag);
-   // victim->setFlags(VALID);    
+   // victim->setFlags(VALID);    // do this outside of this function
    /**note that this cache line has been already 
       upgraded to MRU in the previous function (findLineToReplace)**/
 
@@ -202,7 +203,6 @@ void Cache::snoopBus(ulong busAction, ulong addr){
 			if(busAction == BusRd){ // M -> S
 				line->setFlags(SHARED);
 				writeBacks++;
-				mem_trans_cnt++;
 				iterv_cnt++;
 			}else if(busAction == BusRdX){ // M-> I
 				line->invalidate();
@@ -214,7 +214,7 @@ void Cache::snoopBus(ulong busAction, ulong addr){
 			}
 			// ideally do flush from cache to memory
 			flushes_cnt++;
-			mem_trans_cnt++;
+			mem_trans_cnt++; // either M -> S or M -> I require data write back to memory
 		}else if(status == SHARED){
 			if(busAction == BusRdX){ // S-> I
 				line->invalidate();

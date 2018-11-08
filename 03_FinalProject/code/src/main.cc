@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 	//*****propagate each request down through memory hierarchy**********//
 	//*****by calling cachesArray[processor#]->Access(...)***************//
 	///******************************************************************//
-	
+
 	while((getline(&line, &len, pFile)) != -1){ //iterate line by line
 		proc_id = atoi(strtok(line, delimiter));
 		op      = strtok(NULL, delimiter)[0];	
@@ -99,17 +99,6 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-		// if(busAction != NONE){
-		// 	for(int i = 0 ; i < num_processors ; i++){
-		// 		printf("Cache[%d]:", i);
-		// 		printf("%3lu ", myCaches[i]->c2c_cnt);
-		// 		printf("%3lu ", myCaches[i]->mem_trans_cnt);
-		// 		printf("%3lu ", myCaches[i]->iterv_cnt);
-		// 		printf("%3lu ", myCaches[i]->invalid_cnt);
-		// 		printf("%3lu ", myCaches[i]->flushes_cnt);
-		// 		printf("%3lu\n", myCaches[i]->BusRdX_cnt);
-		// 	}
-		// }
 	}
 
 	fclose(pFile);
