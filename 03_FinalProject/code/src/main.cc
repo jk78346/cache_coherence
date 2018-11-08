@@ -87,14 +87,14 @@ int main(int argc, char *argv[])
 		op      = strtok(NULL, delimiter)[0];	
 		sscanf(((string)(strtok(NULL, delimiter))).c_str(), "%lx", &addr);
 		// printf("proc_id: %d, op: %c, addr: %lx\n", proc_id, op, addr);
-		busAction = myCaches[proc_id]->Access(addr, op);
+		busAction = myCaches[proc_id]->Access(addr, op, protocol);
 		// printf("proc_id: %d, addr: %lx, op: %c, busAction: %lu\n", proc_id, addr, op, busAction);
 		// for this moment, all other caches can snoop the bus to react 
 		// since no state transition if no access from any proc.
 		if(busAction != NONE){ // other processors have to snoop bus and react 
 			for(int i = 0 ; i < num_processors ; i++){
 				if(i != proc_id){
-					myCaches[i]->snoopBus(busAction, addr);
+					myCaches[i]->snoopBus(busAction, addr, protocol);
 				}
 			}
 		}

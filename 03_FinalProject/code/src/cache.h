@@ -83,14 +83,22 @@ public:
    ulong getWB(){return writeBacks;}
    
    void writeBack(ulong)   {writeBacks++;}
-   ulong Access(ulong,uchar);
+   ulong Access(ulong,uchar, int);
    void printStats(uint id);
    void updateLRU(cacheLine *);
 
    //******///
    //add other functions to handle bus transactions///
    //******///
-   void snoopBus(ulong, ulong);
+   void snoopBus(ulong, ulong, int);
+   void MSI_snoop_handle(ulong, cacheLine * line);
+   void MESI_snoop_handle(ulong, cacheLine * line);
+   void Dragon_snoop_handle(ulong, cacheLine * line);
+   // add detail functions for both access() and snoopBUs() to deal with three protocols
+   ulong readHit(cacheLine *, int);
+   ulong writeHit(cacheLine *, int);
+   ulong readMiss(cacheLine *, int);
+   ulong writeMiss(cacheLine *, int); 
 };
 
 #endif

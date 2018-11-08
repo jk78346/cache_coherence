@@ -52,46 +52,27 @@ Cache::Cache(int s,int a,int b )
 /**you might add other parameters to Access()
 since this function is an entry point 
 to the memory hierarchy (i.e. caches)**/
-ulong Cache::Access(ulong addr,uchar op)
+ulong Cache::Access(ulong addr,uchar op, int protocol)
 {
 	ulong busAction;
-	currentCycle++;/*per cache global counter to maintain LRU order 
-			among cache ways, updated on every cache access*/
+	currentCycle++;/*per cache global counter to maintain LRU order among cache ways, updated on every cache access*/
     if(op == 'w') writes++;
 	else          reads++;
 	
 	cacheLine * line = findLine(addr);
-	if(line == NULL)/*miss*/
-	{
+	if(line == NULL){/*miss*/
 		cacheLine *newline = fillLine(addr);
-   		if(op == 'w'){ // I -> M
-   			writeMisses++;
-   			mem_trans_cnt++;
-			busAction = BusRdX;
-			BusRdX_cnt++;
-   			newline->setFlags(MODIFIED);    
-		}else{ // op == 'r'  // I -> S
-			readMisses++;
-			busAction = BusRd;
-			mem_trans_cnt++;
-			newline->setFlags(SHARED);
+   		if(op == 'w'){  
+   			busAction = writeMiss(newline, protocol); 
+		}else{ // op == 'r' 
+			busAction = readMiss(newline, protocol);
 		}
-	}
-	else
-	{
-		/**since it's a hit, update LRU and update dirty flag**/
+	}else{ /**since it's a hit, update LRU and update dirty flag**/
 		updateLRU(line);
 		if(op == 'w'){
-			if(line->getFlags() == SHARED){
-		 		line->setFlags(MODIFIED);
-				mem_trans_cnt++; // S -> M : memory controller provide data anyway since it cannot tell if (1) S -> M or (2) I -> M
-				busAction = BusRdX;
-		 		BusRdX_cnt++;	// in this case, it generate BusRdX, no distinguish between I -> M's BusRdX
-			}else{
-				busAction = NONE;
-			}
+			busAction = writeHit(line, protocol);
 		}else{
-			busAction = NONE;
+			busAction = readHit(line, protocol);
 		}
 	}
 	return busAction;
@@ -194,8 +175,97 @@ void Cache::printStats(uint id)
 	printf("12. number of BusRdX:				%lu\n", BusRdX_cnt);
 }
 
-void Cache::snoopBus(ulong busAction, ulong addr){
+void Cache::snoopBus(ulong busAction, ulong addr, int protocol){
 	cacheLine * line = findLine(addr);
+	if(protocol == 0){ // MSI
+		MSI_snoop_handle(busAction, line);
+	}else if(protocol == 1){ // MESI
+		MESI_snoop_handle(busAction, line);
+	}else if(protocol == 2){ // Dragon
+		Dragon_snoop_handle(busAction, line);
+	}else{
+		printf("undefined protocol: %d\n", protocol);
+		exit(0);
+	}
+}
+
+ulong Cache::writeMiss(cacheLine * newline, int protocol){
+	ulong busAction;
+	if(protocol == 0){ // MSI
+		// I -> M
+		writeMisses++;
+		mem_trans_cnt++;
+		busAction = BusRdX;
+		BusRdX_cnt++;
+		newline->setFlags(MODIFIED); 
+	}else if(protocol == 1){ // MESI
+
+	}else if(protocol == 2){ // Dragon
+
+	}else{
+		printf("undefined protocol: %d\n", protocol);
+		exit(0);
+	}
+	return busAction;
+}
+
+ulong Cache::readMiss(cacheLine * newline, int protocol){
+	ulong busAction;
+ 	if(protocol == 0){ // MSI
+		// I -> S
+		readMisses++;
+		busAction = BusRd;
+		mem_trans_cnt++;
+		newline->setFlags(SHARED);
+ 	}else if(protocol == 1){ // MESI
+
+	}else if(protocol == 2){ // Dragon
+
+	}else{
+		printf("undefined protocol: %d\n", protocol);
+		exit(0);
+	}
+ 	return busAction;
+}
+
+ulong Cache::writeHit(cacheLine * line, int protocol){
+	ulong busAction;
+	if(protocol == 0){ // MSI
+		if(line->getFlags() == SHARED){
+	 		line->setFlags(MODIFIED);
+			mem_trans_cnt++; // S -> M : memory controller provide data anyway since it cannot tell if (1) S -> M or (2) I -> M
+			busAction = BusRdX;
+	 		BusRdX_cnt++;	// in this case, it generate BusRdX, no distinguish between I -> M's BusRdX
+		}else{
+			busAction = NONE;
+		}
+	}else if(protocol == 1){ // MESI
+
+	}else if(protocol == 2){ // Dragon
+
+	}else{
+		printf("undefined protocol: %d\n", protocol);
+		exit(0);
+	}
+	return busAction;
+}
+
+ulong Cache:: readHit(cacheLine * line, int protocol){
+	ulong busAction;
+	if(protocol == 0){ // MSI
+		busAction = NONE;
+	}else if(protocol == 1){ // MESI
+
+	}else if(protocol == 2){ // Dragon
+
+	}else{
+		printf("undefined protocol: %d\n", protocol);
+		exit(0);
+	}
+	return busAction;
+}
+
+void Cache::MSI_snoop_handle(ulong busAction, cacheLine * line){
 	ulong status;
 	if(line != NULL){ // snoop bus action on addr that I have valid copy in my cache
 		status = line->getFlags();
@@ -224,4 +294,12 @@ void Cache::snoopBus(ulong busAction, ulong addr){
 			return;
 		}
 	}
+}
+
+void Cache::MESI_snoop_handle(ulong busAction, cacheLine * line){
+
+}
+
+void Cache::Dragon_snoop_handle(ulong busAction, cacheLine * line){
+
 }
