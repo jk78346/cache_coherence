@@ -175,17 +175,34 @@ void Cache::printStats(uint id)
 	printf("12. number of BusRdX:				%lu\n", BusRdX_cnt);
 }
 
-void Cache::snoopBus(ulong busAction, ulong addr, int protocol){
+int Cache::snoopBus(ulong busAction, ulong addr, int protocol){
 	cacheLine * line = findLine(addr);
+	int result = 0;
 	if(protocol == 0){ // MSI
 		MSI_snoop_handle(busAction, line);
 	}else if(protocol == 1){ // MESI
-		MESI_snoop_handle(busAction, line);
+		MULTI_SHARE_FLAG = 0; // init
+		ulong tmp_c2c_cnt = c2c_cnt;
+		result = MESI_snoop_handle(busAction, line);
+		if(MULTI_SHARE_FLAG == 1 && c2c_cnt > tmp_c2c_cnt + 1){ //for multiple share case, the counter only count once
+			printf("tmp_c2c_cnt = %lu, c2c_cnt = %lu\n", tmp_c2c_cnt, c2c_cnt);
+			c2c_cnt = tmp_c2c_cnt + 1;
+		}
 	}else if(protocol == 2){ // Dragon
 		Dragon_snoop_handle(busAction, line);
 	}else{
 		printf("undefined protocol: %d\n", protocol);
 		exit(0);
+	}
+	return result; // designed only for checking COPIES_EXIST, otherwise should return 0
+}
+
+void Cache::COPIES_EXIST_handle(ulong addr){
+	cacheLine * line = findLine(addr);
+	if(line != NULL){ //assert that the cache line is there and wait for state determination
+		line->setFlags(SHARED);
+	}else{
+		printf("COPIES_EXIST_handling but cache line not valid.");
 	}
 }
 
@@ -199,7 +216,12 @@ ulong Cache::writeMiss(cacheLine * newline, int protocol){
 		BusRdX_cnt++;
 		newline->setFlags(MODIFIED); 
 	}else if(protocol == 1){ // MESI
-
+		// I -> M
+		writeMisses++;
+		mem_trans_cnt++;
+		busAction = BusRdX;
+		BusRdX_cnt++;
+		newline->setFlags(MODIFIED);
 	}else if(protocol == 2){ // Dragon
 
 	}else{
@@ -218,7 +240,13 @@ ulong Cache::readMiss(cacheLine * newline, int protocol){
 		mem_trans_cnt++;
 		newline->setFlags(SHARED);
  	}else if(protocol == 1){ // MESI
-
+		// could be either I -> E or I -> S depend on COPIES_EXIST line
+		// and only read miss can will put BusRd on Bus.
+ 		readMisses++;
+		busAction = BusRd;
+		mem_trans_cnt++;
+		newline->setFlags(EXCLUSIVE); //its temperary, futher could be S if COPIES_EXIST == 1 else remains E 
+		// leave newline->setFlags() for futher determine. (after snooping done by all others to decide COPIES_EXIST)
 	}else if(protocol == 2){ // Dragon
 
 	}else{
@@ -240,7 +268,14 @@ ulong Cache::writeHit(cacheLine * line, int protocol){
 			busAction = NONE;
 		}
 	}else if(protocol == 1){ // MESI
-
+		if(line->getFlags() == SHARED){ // S -> M
+			line->setFlags(MODIFIED);
+			busAction = BusUpgr; // this $ simply S -> M, and notifiy others to do: S -> I, no memory access
+		}else if(line->getFlags() == EXCLUSIVE){ // E -> M
+			line->setFlags(MODIFIED); // simply E -> M and no busAction since I know no one shares the same line
+		}else{
+			busAction = NONE; // still, it remains in M
+		}
 	}else if(protocol == 2){ // Dragon
 
 	}else{
@@ -255,7 +290,7 @@ ulong Cache:: readHit(cacheLine * line, int protocol){
 	if(protocol == 0){ // MSI
 		busAction = NONE;
 	}else if(protocol == 1){ // MESI
-
+		busAction = NONE; 
 	}else if(protocol == 2){ // Dragon
 
 	}else{
@@ -292,12 +327,75 @@ void Cache::MSI_snoop_handle(ulong busAction, cacheLine * line){
 			}
 		}else if(status == INVALID){
 			return;
+		}else{
+			printf("undefined state: %lu in MSI\n", busAction);
+			exit(0);
 		}
 	}
 }
 
-void Cache::MESI_snoop_handle(ulong busAction, cacheLine * line){
-
+int Cache::MESI_snoop_handle(ulong busAction, cacheLine * line){
+	ulong status;
+	int COPIES_EXIST = 0;
+	if(line != NULL){// snoop bus action on addr that I have valid copy in my cache
+		status = line->getFlags();
+		if(status == MODIFIED){
+			if(busAction == BusRd){ // Flush, M -> S
+				line->setFlags(SHARED);
+				writeBacks++;
+				mem_trans_cnt++; // Flush to bus, both memory and other shares have to pick up
+				// c2c_cnt++;
+				iterv_cnt++;
+				flushes_cnt++;
+				COPIES_EXIST = 1;
+			}
+			if(busAction == BusRdX){ // Flush, M -> I 
+				line->setFlags(INVALID);
+				writeBacks++;
+				mem_trans_cnt++;
+				flushes_cnt++;
+				invalid_cnt++;
+			}
+		}else if(status == EXCLUSIVE){
+			if(busAction == BusRd){ // FlushOpt, E -> S
+				line->setFlags(SHARED);
+				c2c_cnt++;
+				//flushes_cnt++;
+				iterv_cnt++;
+				COPIES_EXIST = 1;
+			}
+			if(busAction == BusRdX){ // FlushOpt, E -> I
+				line->setFlags(INVALID);
+				c2c_cnt++;            
+				//flushes_cnt++;
+				invalid_cnt++;
+			}
+		}else if(status == SHARED){
+			if(busAction == BusRd){	//FlushOpt, S -> S (multiple shared copies will all flush, since no owner concept here)
+				// c2c_cnt++;
+				MULTI_SHARE_FLAG = 1;
+				//flushes_cnt++;	
+				COPIES_EXIST = 1; // only from ( read miss on I state ) of active processor, ack this info to it
+			}
+			if(busAction == BusRdX){ // FlushOpt, S -> I
+				line->setFlags(INVALID);
+				// c2c_cnt++;
+				MULTI_SHARE_FLAG = 1;
+				//flushes_cnt++;
+				invalid_cnt++;
+			}
+			if(busAction == BusUpgr){ // S -> I
+				line->setFlags(INVALID);
+				invalid_cnt++;
+			}
+		}else if(status == INVALID){
+			;
+		}else{
+			printf("undefined state: %lu in MESI\n", busAction);
+			exit(0);
+		}
+	}
+	return COPIES_EXIST;
 }
 
 void Cache::Dragon_snoop_handle(ulong busAction, cacheLine * line){

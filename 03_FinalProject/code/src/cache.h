@@ -16,15 +16,16 @@ typedef unsigned int uint;
 enum{
 	INVALID = 0,
 	SHARED,
+   EXCLUSIVE,
 	MODIFIED
 };
-
 // define bus action (MSI)
 enum{
    NONE = 0,
    BusRd,
    BusRdX,
-   Flush
+   Flush,
+   BusUpgr
 };
 
 class cacheLine 
@@ -60,6 +61,7 @@ protected:
    ulong invalid_cnt;   //invalidations
    ulong flushes_cnt;
    ulong BusRdX_cnt;
+   int MULTI_SHARE_FLAG; //in MESI, detecting if there are multiple shared cache lines in S states doing cache-to-cache transfer, for correcting c2c_cnt 
    //******///
 
    cacheLine **cache;
@@ -90,10 +92,11 @@ public:
    //******///
    //add other functions to handle bus transactions///
    //******///
-   void snoopBus(ulong, ulong, int);
+   int snoopBus(ulong, ulong, int);
    void MSI_snoop_handle(ulong, cacheLine * line);
-   void MESI_snoop_handle(ulong, cacheLine * line);
+   int MESI_snoop_handle(ulong, cacheLine * line);
    void Dragon_snoop_handle(ulong, cacheLine * line);
+   void COPIES_EXIST_handle(ulong);
    // add detail functions for both access() and snoopBUs() to deal with three protocols
    ulong readHit(cacheLine *, int);
    ulong writeHit(cacheLine *, int);

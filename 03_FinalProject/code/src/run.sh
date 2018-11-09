@@ -4,7 +4,7 @@ CACHE_SIZE="8192"
 CACHE_ASSOC="8"
 BLK_SIZE="64"
 PROC="4"
-PROTO="0" # 0:MSI, 1:MESI, 2:Dragon
+PROTO="1" # 0:MSI, 1:MESI, 2:Dragon
 # INPUTFILE="../trace/canneal.04t.longTrace"
 # INPUTFILE="../trace/canneal.04t.debug"
 # =========================
@@ -18,6 +18,10 @@ else
 	PROTO_NAME="Dragon"
 fi
 # =========================
+make clean
+make
+make clobber
+echo "===== auto diff result: ====="
 for INPUTFILE in "../trace/canneal.04t.debug" "../trace/canneal.04t.longTrace"
 do
 	INPUTTYPE=$(echo $INPUTFILE| cut -d'.' -f 5) # get substring 
@@ -27,27 +31,24 @@ do
 	fi
 	OUTPUT_NAME="${PROTO_NAME}_${INPUTTYPE}.txt"
 	OUTPUTFILE="../result/${OUTPUT_NAME}"
-	TMPFILE="../result/tmp.txt"
+	DIFFFILE="../result/error.txt"
 	VAL_NAME="${PROTO_NAME}_${INPUTTYPE}.val"
 	VALFILE="../val.v2/${VAL_NAME}"
-	make clean
-	make
-	make clobber
 	if [ -f $OUTPUTFILE ] # delete the output file first if it already exist
 	then
 		rm $OUTPUTFILE
 	fi
 	./smp_cache $CACHE_SIZE $CACHE_ASSOC $BLK_SIZE $PROC $PROTO $INPUTFILE >> $OUTPUTFILE 2>&1
-	if [ -f $TMPFILE ] # delete the tmp file first if it already exist
+	if [ -f $DIFFFILE ] # delete the tmp file first if it already exist
 	then
-		rm $TMPFILE
+		rm $DIFFFILE
 	fi
-	diff $VALFILE $OUTPUTFILE >> $TMPFILE
-	diff $TMPFILE "../result/pass.txt"
+	diff $VALFILE $OUTPUTFILE >> $DIFFFILE
+	diff $DIFFFILE "../result/pass.txt"
 	if [ $? -eq 0 ]
 	then 
 		echo "pass on ${PROTO_NAME} with ${INPUTTYPE}"
-		rm $TMPFILE
+		rm $DIFFFILE
 	else
 		echo "fail on ${PROTO_NAME} with ${INPUTTYPE}"
 	fi
