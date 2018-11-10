@@ -4,7 +4,7 @@ CACHE_SIZE="8192"
 CACHE_ASSOC="8"
 BLK_SIZE="64"
 PROC="4"
-PROTO="1" # 0:MSI, 1:MESI, 2:Dragon
+PROTO="0" # 0:MSI, 1:MESI, 2:Dragon
 # INPUTFILE="../trace/canneal.04t.longTrace"
 # INPUTFILE="../trace/canneal.04t.debug"
 # =========================

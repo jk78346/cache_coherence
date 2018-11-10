@@ -12,6 +12,11 @@ using namespace std;
 
 #include "cache.h"
 
+int COPIES_EXIST;
+int protocol;
+int c2c_FLAG;
+int BusRdX_FlushOpt_FLAG; 
+
 unsigned long char2long(char *addr){
 
 	return 0;
@@ -30,8 +35,8 @@ int main(int argc, char *argv[])
 	unsigned long addr;
 
 	unsigned long busAction; // a global behavior
-	int COPIES_EXIST;		// only for MESI
-
+	unsigned long busReaction; // snooper gives this
+	
 	if(argv[1] == NULL){
 		 printf("input format: ");
 		 printf("./smp_cache <cache_size> <assoc> <block_size> <num_processors> <protocol> <trace_file> \n");
@@ -43,7 +48,7 @@ int main(int argc, char *argv[])
 	int cache_assoc= atoi(argv[2]);
 	int blk_size   = atoi(argv[3]);
 	int num_processors = atoi(argv[4]);/*1, 2, 4, 8*/
-	int protocol   = atoi(argv[5]);	 /*0:MSI, 1:MESI, 2:Dragon*/
+	protocol   = atoi(argv[5]);	 /*0:MSI, 1:MESI, 2:Dragon*/ // its a global variable now
 	char *fname =  (char *)malloc(20);
  	fname = argv[6];
 	
@@ -84,27 +89,26 @@ int main(int argc, char *argv[])
 	///******************************************************************//
 
 	while((getline(&line, &len, pFile)) != -1){ //iterate line by line
-		COPIES_EXIST = 0;
+		// ===== reset FLAGs for every cycle =====
+		COPIES_EXIST = 0;	
+		c2c_FLAG = 0;
+		BusRdX_FlushOpt_FLAG = 0;
+		// =======================================
 		// ===== parsing arguments ====
 		proc_id = atoi(strtok(line, delimiter));
 		op      = strtok(NULL, delimiter)[0];	
 		sscanf(((string)(strtok(NULL, delimiter))).c_str(), "%lx", &addr);
 		// ===========================
-		busAction = myCaches[proc_id]->Access(addr, op, protocol);
+		busAction = myCaches[proc_id]->Access(addr, op);
 		// After active proceesor done, it may put some signal on bus for all others to snoop 
 		if(busAction != NONE){ // other processors have to snoop bus and react 
 			for(int i = 0 ; i < num_processors ; i++){
 				if(i != proc_id){
-					if(protocol == 1){ // for MESI
-						COPIES_EXIST = COPIES_EXIST | myCaches[i]->snoopBus(busAction, addr, protocol); //at least one 1, its 1
-					}else{
-						myCaches[i]->snoopBus(busAction, addr, protocol);
-					}
+					busReaction = myCaches[i]->snoopBus(busAction, addr);
+					myCaches[i]->snoopReaction(busReaction); // such as flush
 				}
 			}
-			if(COPIES_EXIST == 1 and protocol == 1){ // designed only for MESI
-				myCaches[proc_id]->COPIES_EXIST_handle(addr); // do I -> S ( it was temp as : I -> E if no need to do this ) 
-			}
+			myCaches[proc_id]->proc_handle(addr); //such as counting
 		}// if no busAction, do nothing
 	}
 

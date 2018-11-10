@@ -19,14 +19,21 @@ enum{
    EXCLUSIVE,
 	MODIFIED
 };
-// define bus action (MSI)
+// define bus actions
 enum{
    NONE = 0,
    BusRd,
    BusRdX,
    Flush,
+   FlushOpt,
    BusUpgr
 };
+
+extern int COPIES_EXIST;
+extern int protocol;
+extern int c2c_FLAG;
+extern int BusRdX_FlushOpt_FLAG; // active proc: I -> M, other(s): E(S) -> I, the mem_trans_cnt doesn't count
+
 
 class cacheLine 
 {
@@ -61,8 +68,8 @@ protected:
    ulong invalid_cnt;   //invalidations
    ulong flushes_cnt;
    ulong BusRdX_cnt;
-   int MULTI_SHARE_FLAG; //in MESI, detecting if there are multiple shared cache lines in S states doing cache-to-cache transfer, for correcting c2c_cnt 
    //******///
+   int RM_FLAG; // designed for MESI, in read miss case
 
    cacheLine **cache;
    ulong calcTag(ulong addr)     { return (addr >> (log2Blk) );}
@@ -85,23 +92,24 @@ public:
    ulong getWB(){return writeBacks;}
    
    void writeBack(ulong)   {writeBacks++;}
-   ulong Access(ulong,uchar, int);
+   ulong Access(ulong,uchar);
    void printStats(uint id);
    void updateLRU(cacheLine *);
 
    //******///
    //add other functions to handle bus transactions///
    //******///
-   int snoopBus(ulong, ulong, int);
-   void MSI_snoop_handle(ulong, cacheLine * line);
-   int MESI_snoop_handle(ulong, cacheLine * line);
-   void Dragon_snoop_handle(ulong, cacheLine * line);
-   void COPIES_EXIST_handle(ulong);
+   ulong snoopBus(ulong, ulong);
+   void snoopReaction(ulong);
+   ulong MSI_snoop_handle(ulong, cacheLine * line);
+   ulong MESI_snoop_handle(ulong, cacheLine * line);
+   ulong Dragon_snoop_handle(ulong, cacheLine * line);
+   void proc_handle(ulong);
    // add detail functions for both access() and snoopBUs() to deal with three protocols
-   ulong readHit(cacheLine *, int);
-   ulong writeHit(cacheLine *, int);
-   ulong readMiss(cacheLine *, int);
-   ulong writeMiss(cacheLine *, int); 
+   ulong readHit(cacheLine *);
+   ulong writeHit(cacheLine *);
+   ulong readMiss(cacheLine *);
+   ulong writeMiss(cacheLine *); 
 };
 
 #endif
