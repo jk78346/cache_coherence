@@ -17,7 +17,9 @@ enum{
 	INVALID = 0,
 	SHARED,
    EXCLUSIVE,
-	MODIFIED
+	MODIFIED,
+   SHARED_MODIFIED,
+   SHARED_CLEAN
 };
 // define bus actions
 enum{
@@ -26,13 +28,14 @@ enum{
    BusRdX,
    Flush,
    FlushOpt,
-   BusUpgr
+   BusUpgr,
+   BusUpd  //bus update for Dragon
 };
 
 extern int COPIES_EXIST;
 extern int protocol;
 extern int c2c_FLAG;
-extern int BusRdX_FlushOpt_FLAG; // active proc: I -> M, other(s): E(S) -> I, the mem_trans_cnt doesn't count
+extern int Flush_no_mem_FLAG; // active proc: I -> M, other(s): E(S) -> I, the mem_trans_cnt doesn't count
 
 
 class cacheLine 
@@ -69,7 +72,9 @@ protected:
    ulong flushes_cnt;
    ulong BusRdX_cnt;
    //******///
-   int RM_FLAG; // designed for MESI, in read miss case
+   int RM_FLAG; // designed for MESI and Dragon, in read  miss case
+   int WM_FLAG; // designed for Dragon,          in write miss case
+   int WH_FLAG; // designed for Dragon,          in write hit  case
 
    cacheLine **cache;
    ulong calcTag(ulong addr)     { return (addr >> (log2Blk) );}
@@ -104,7 +109,7 @@ public:
    ulong MSI_snoop_handle(ulong, cacheLine * line);
    ulong MESI_snoop_handle(ulong, cacheLine * line);
    ulong Dragon_snoop_handle(ulong, cacheLine * line);
-   void proc_handle(ulong);
+   ulong proc_handle(ulong);
    // add detail functions for both access() and snoopBUs() to deal with three protocols
    ulong readHit(cacheLine *);
    ulong writeHit(cacheLine *);

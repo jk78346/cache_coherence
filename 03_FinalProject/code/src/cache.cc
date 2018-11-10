@@ -59,6 +59,8 @@ ulong Cache::Access(ulong addr,uchar op)
     if(op == 'w') writes++;
 	else          reads++;
 	RM_FLAG = 0; // reset this flag
+	WM_FLAG = 0; // reset this flag
+	WH_FLAG = 0; // reset this flag
 	cacheLine * line = findLine(addr);
 	if(line == NULL){/*miss*/
 		cacheLine *newline = fillLine(addr);
@@ -192,7 +194,11 @@ ulong Cache::writeMiss(cacheLine * newline){
 		BusRdX_cnt++;
 		newline->setFlags(MODIFIED);
 	}else if(protocol == 2){ // Dragon
-
+		WM_FLAG = 1;
+		writeMisses++;
+		busAction = BusRd;
+		// mem_trans_cnt ?? later
+		newline->setFlags(SHARED_MODIFIED); // ITS tempperary
 	}else{
 		printf("undefined protocol: %d\n", protocol);
 		exit(0);
@@ -216,7 +222,11 @@ ulong Cache::readMiss(cacheLine * newline){
 		RM_FLAG = 1;
 		newline->setFlags(EXCLUSIVE); //its temperary, futher could be S if COPIES_EXIST == 1 else remains E 
 	}else if(protocol == 2){ // Dragon
-
+		RM_FLAG = 1;
+		readMisses++;
+		busAction = BusRd;
+		// mem_trans_cnt ?? later
+		newline->setFlags(SHARED_CLEAN); // ITS tempperary
 	}else{
 		printf("undefined protocol: %d\n", protocol);
 		exit(0);
@@ -245,7 +255,14 @@ ulong Cache::writeHit(cacheLine * line){
 			busAction = NONE; // still, it remains in M
 		}
 	}else if(protocol == 2){ // Dragon
-
+		WH_FLAG = 1;
+		if(line->getFlags() == SHARED_CLEAN){
+			busAction = BusUpd;	// (C): Sc -> Sm, (!C): Sc -> M
+		}else if(line->getFlags() ==  SHARED_MODIFIED){	
+			busAction = BusUpd; // (C): Sm -> Sm, (!C): Sm -> M
+		}else{ // M or E state
+			busAction = NONE;
+		}
 	}else{
 		printf("undefined protocol: %d\n", protocol);
 		exit(0);
@@ -260,7 +277,7 @@ ulong Cache:: readHit(cacheLine * line){
 	}else if(protocol == 1){ // MESI
 		busAction = NONE; 
 	}else if(protocol == 2){ // Dragon
-
+		busAction = NONE;
 	}else{
 		printf("undefined protocol: %d\n", protocol);
 		exit(0);
@@ -276,7 +293,7 @@ ulong Cache::snoopBus(ulong busAction, ulong addr){
 	}else if(protocol == 1){ // MESI
 		snoopReaction = MESI_snoop_handle(busAction, line);
 	}else if(protocol == 2){ // Dragon
-		Dragon_snoop_handle(busAction, line);
+		snoopReaction = Dragon_snoop_handle(busAction, line);
 	}else{
 		printf("undefined protocol: %d\n", protocol);
 		exit(0);
@@ -329,9 +346,7 @@ ulong Cache::MESI_snoop_handle(ulong busAction, cacheLine * line){
 				line->setFlags(SHARED);
 				writeBacks++;
 				mem_trans_cnt++; // Flush to bus, both memory and other shares have to pick up
-				// c2c_cnt++;
 				iterv_cnt++;
-				// flushes_cnt++;
 				snoopReaction = Flush;
 				c2c_FLAG = 1;
 				COPIES_EXIST = 1;
@@ -340,38 +355,33 @@ ulong Cache::MESI_snoop_handle(ulong busAction, cacheLine * line){
 				line->setFlags(INVALID);
 				writeBacks++;
 				mem_trans_cnt++;
-				// flushes_cnt++;
 				c2c_FLAG = 1;
 				snoopReaction = Flush;
-				BusRdX_FlushOpt_FLAG = 1;
+				Flush_no_mem_FLAG = 1;
 				invalid_cnt++;
 			}
 		}else if(status == EXCLUSIVE){
 			if(busAction == BusRd){ // FlushOpt, E -> S
 				line->setFlags(SHARED);
-				// c2c_cnt++;
 				iterv_cnt++;
 				snoopReaction = FlushOpt;
 				COPIES_EXIST = 1;
 			}
 			if(busAction == BusRdX){ // FlushOpt, E -> I
 				line->setFlags(INVALID);
-				// c2c_cnt++; 
 				snoopReaction = FlushOpt;      
-				BusRdX_FlushOpt_FLAG = 1;     
+				Flush_no_mem_FLAG = 1;     
 				invalid_cnt++;
 			}
 		}else if(status == SHARED){
 			if(busAction == BusRd){	//FlushOpt, S -> S (multiple shared copies will all flush, since no owner concept here)
-				// c2c_cnt++;	
 				snoopReaction = FlushOpt;
 				COPIES_EXIST = 1; // only from ( read miss on I state ) of active processor, ack this info to it
 			}
 			if(busAction == BusRdX){ // FlushOpt, S -> I
 				line->setFlags(INVALID);
-				// c2c_cnt++;
 				snoopReaction = FlushOpt;
-				BusRdX_FlushOpt_FLAG = 1;
+				Flush_no_mem_FLAG = 1;
 				invalid_cnt++;
 			}
 			if(busAction == BusUpgr){ // S -> I
@@ -389,7 +399,38 @@ ulong Cache::MESI_snoop_handle(ulong busAction, cacheLine * line){
 }
 
 ulong Cache::Dragon_snoop_handle(ulong busAction, cacheLine * line){
-	return 0;
+	ulong status;
+	ulong snoopReaction = NONE;
+	if(line != NULL){// snoop bus action on addr that I have valid copy in my cache
+		status = line->getFlags();
+		// busAction dominates, not state in my implementation
+		if(BusRd){
+			COPIES_EXIST = 1;
+			if(status == EXCLUSIVE){
+				line->setFlags(SHARED_CLEAN); // E -> Sc
+				iterv_cnt++;
+			}else if(status == MODIFIED){
+				line->setFlags(SHARED_MODIFIED); // M -> Sm
+				iterv_cnt++;
+				snoopReaction = Flush;
+			}else if(status == SHARED_MODIFIED){
+				snoopReaction = Flush;
+			}
+		}else if(BusUpd){
+			if(status == SHARED_CLEAN){ // Sc -> Sc, Update
+				// picked up a word to update my cache line
+				c2c_cnt++;
+			}else if(status == SHARED_MODIFIED){ 
+				line->setFlags(SHARED_CLEAN); // Sm -> Sc, Update
+				// picked up a word to update my cache line
+				c2c_cnt++;
+			}
+		}else{
+			printf("invalid bus action: %lu in Dragon\n", busAction);
+			exit(0);
+		}
+	}
+	return snoopReaction;
 }
 
 void Cache::snoopReaction(ulong busReaction){
@@ -412,7 +453,8 @@ void Cache::snoopReaction(ulong busReaction){
 	}
 }
 
-void Cache::proc_handle(ulong addr){
+ulong Cache::proc_handle(ulong addr){
+	ulong post = NONE;
 	// MSI do nothing
 	if(protocol == 1){ // MESI
 		if(RM_FLAG == 1){
@@ -425,14 +467,59 @@ void Cache::proc_handle(ulong addr){
 					mem_trans_cnt++;
 				}
 			}else{
-				printf("COPIES_EXIST_handling but cache line not valid.");
+				printf("COPIES_EXIST_handling but cache line not valid.\n");
 			}
 		}	
 		if(c2c_FLAG == 1){ //at least one FlushOpt happened
 			c2c_cnt++;
 		}
-		if(BusRdX_FlushOpt_FLAG == 1){
+		if(Flush_no_mem_FLAG == 1){
 			mem_trans_cnt--;
 		}
-	}// end MESI
+	}else if(protocol == 2){ // Dragon
+		if(WM_FLAG == 1){
+			cacheLine * line = findLine(addr);
+			if(line != NULL){ //assert that the cache line is there and wait for state determination
+				if(COPIES_EXIST == 1){ 
+					line->setFlags(SHARED_MODIFIED); //nowhere -> Sm
+					post = BusUpd; // the only case for second reaction
+				}else{ 
+					line->setFlags(MODIFIED); // nowhere -> M
+				}
+			}else{
+				printf("write miss handling but cache line not valid.\n");
+			}
+		}else if(RM_FLAG == 1){
+			cacheLine * line = findLine(addr);
+			if(line != NULL){ //assert that the cache line is there and wait for state determination
+				if(COPIES_EXIST == 1){
+					line->setFlags(SHARED_CLEAN); //nowhere -> Sc
+				}else{
+					line->setFlags(EXCLUSIVE); // nowhere -> E
+				}
+			}else{
+				printf("read miss handling but cache line not valid.\n");
+			}
+		}else if(WH_FLAG == 1){
+			cacheLine * line = findLine(addr);
+			if(line != NULL){ //assert that the cache line is there and wait for state determination
+				if(line->getFlags() == EXCLUSIVE){
+					line->setFlags(MODIFIED); // E -> M
+				}else if(line->getFlags() == SHARED_CLEAN){
+					if(COPIES_EXIST == 1){
+						line->setFlags(SHARED_MODIFIED); // Sc -> Sm
+					}else{
+						line->setFlags(MODIFIED); // Sc -> M
+					}
+				}else if(line->getFlags() == SHARED_MODIFIED){
+					if(COPIES_EXIST == 0){
+						line->setFlags(MODIFIED); // Sm -> M
+					} // Sm state remains the same state
+				} // M state remains the same state
+			}else{
+				printf("write hit handling but cache line not valid.\n");
+			}
+		}
+	}
+	return post; // designed only for Dragon in nowhere -> Sm condition posting BusUpd
 }

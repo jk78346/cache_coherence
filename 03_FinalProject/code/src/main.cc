@@ -15,7 +15,7 @@ using namespace std;
 int COPIES_EXIST;
 int protocol;
 int c2c_FLAG;
-int BusRdX_FlushOpt_FLAG; 
+int Flush_no_mem_FLAG; 
 
 unsigned long char2long(char *addr){
 
@@ -36,7 +36,8 @@ int main(int argc, char *argv[])
 
 	unsigned long busAction; // a global behavior
 	unsigned long busReaction; // snooper gives this
-	
+	unsigned long second_busReaction; // designed only for Dragon in nowhere -> Sm condition posting BusUpd
+
 	if(argv[1] == NULL){
 		 printf("input format: ");
 		 printf("./smp_cache <cache_size> <assoc> <block_size> <num_processors> <protocol> <trace_file> \n");
@@ -92,13 +93,13 @@ int main(int argc, char *argv[])
 		// ===== reset FLAGs for every cycle =====
 		COPIES_EXIST = 0;	
 		c2c_FLAG = 0;
-		BusRdX_FlushOpt_FLAG = 0;
+		Flush_no_mem_FLAG = 0;
 		// =======================================
-		// ===== parsing arguments ====
+		// ===== parsing arguments ===============
 		proc_id = atoi(strtok(line, delimiter));
 		op      = strtok(NULL, delimiter)[0];	
 		sscanf(((string)(strtok(NULL, delimiter))).c_str(), "%lx", &addr);
-		// ===========================
+		// =======================================
 		busAction = myCaches[proc_id]->Access(addr, op);
 		// After active proceesor done, it may put some signal on bus for all others to snoop 
 		if(busAction != NONE){ // other processors have to snoop bus and react 
@@ -108,7 +109,16 @@ int main(int argc, char *argv[])
 					myCaches[i]->snoopReaction(busReaction); // such as flush
 				}
 			}
-			myCaches[proc_id]->proc_handle(addr); //such as counting
+			second_busReaction = myCaches[proc_id]->proc_handle(addr); //such as counting
+			// ===== designed only for Dragon in nowhere -> Sm condition posting BusUpd =====
+			if(second_busReaction == BusUpd){
+				for(int i = 0 ; i < num_processors ; i++){
+					if(i != proc_id){
+						myCaches[i]->snoopBus(second_busReaction, addr); // the second bus snooping
+					}
+				}
+			}
+			// ==============================================================================
 		}// if no busAction, do nothing
 	}
 
