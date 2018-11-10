@@ -16,6 +16,7 @@ int COPIES_EXIST;
 int protocol;
 int c2c_FLAG;
 int Flush_no_mem_FLAG; 
+int DEBUG_FLAG = 0; // enable debugg printout
 
 unsigned long char2long(char *addr){
 
@@ -36,7 +37,7 @@ int main(int argc, char *argv[])
 
 	unsigned long busAction; // a global behavior
 	unsigned long busReaction; // snooper gives this
-	unsigned long second_busReaction; // designed only for Dragon in nowhere -> Sm condition posting BusUpd
+	unsigned long second_busAction; // designed only for Dragon in nowhere -> Sm condition posting BusUpd
 
 	if(argv[1] == NULL){
 		 printf("input format: ");
@@ -109,17 +110,26 @@ int main(int argc, char *argv[])
 					myCaches[i]->snoopReaction(busReaction); // such as flush
 				}
 			}
-			second_busReaction = myCaches[proc_id]->proc_handle(addr); //such as counting
+			second_busAction = myCaches[proc_id]->proc_handle(addr); //such as counting
 			// ===== designed only for Dragon in nowhere -> Sm condition posting BusUpd =====
-			if(second_busReaction == BusUpd){
+			if(second_busAction == BusUpd){
 				for(int i = 0 ; i < num_processors ; i++){
 					if(i != proc_id){
-						myCaches[i]->snoopBus(second_busReaction, addr); // the second bus snooping
+						myCaches[i]->snoopBus(second_busAction, addr); // the second bus snooping
 					}
 				}
 			}
 			// ==============================================================================
 		}// if no busAction, do nothing
+		// printf("proc_id: %d, addr: %lx, op: %c, busAction: %lu\n", proc_id, addr, op, busAction);
+		if(DEBUG_FLAG == 1){
+			for(int i = 0 ; i < num_processors ; i++){
+				if(!myCaches[i]->printCache(i, op, addr)){
+					printf("                         ");
+				}
+			}
+			printf("\n");
+		}
 	}
 
 	fclose(pFile);

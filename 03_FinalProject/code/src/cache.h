@@ -115,6 +115,7 @@ public:
    ulong writeHit(cacheLine *);
    ulong readMiss(cacheLine *);
    ulong writeMiss(cacheLine *); 
+   int printCache(int, uchar, ulong);
 };
 
 #endif

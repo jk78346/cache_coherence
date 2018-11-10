@@ -145,7 +145,7 @@ cacheLine *Cache::fillLine(ulong addr)
   
 	cacheLine *victim = findLineToReplace(addr);
 	assert(victim != 0);
-	if(victim->getFlags() == MODIFIED){
+	if((victim->getFlags() == MODIFIED) || (victim->getFlags() == SHARED_MODIFIED)){
    		writeBack(addr);
    		mem_trans_cnt++;
 	}
@@ -196,9 +196,9 @@ ulong Cache::writeMiss(cacheLine * newline){
 	}else if(protocol == 2){ // Dragon
 		WM_FLAG = 1;
 		writeMisses++;
+		mem_trans_cnt++; // ?? later
 		busAction = BusRd;
-		// mem_trans_cnt ?? later
-		newline->setFlags(SHARED_MODIFIED); // ITS tempperary
+		newline->setFlags(MODIFIED); // Its tempperary, could be n -> M if (!C) or n -> Sm if (!C)
 	}else{
 		printf("undefined protocol: %d\n", protocol);
 		exit(0);
@@ -225,7 +225,7 @@ ulong Cache::readMiss(cacheLine * newline){
 		RM_FLAG = 1;
 		readMisses++;
 		busAction = BusRd;
-		// mem_trans_cnt ?? later
+		mem_trans_cnt++; //?? later
 		newline->setFlags(SHARED_CLEAN); // ITS tempperary
 	}else{
 		printf("undefined protocol: %d\n", protocol);
@@ -260,6 +260,8 @@ ulong Cache::writeHit(cacheLine * line){
 			busAction = BusUpd;	// (C): Sc -> Sm, (!C): Sc -> M
 		}else if(line->getFlags() ==  SHARED_MODIFIED){	
 			busAction = BusUpd; // (C): Sm -> Sm, (!C): Sm -> M
+		}else if(line->getFlags() == EXCLUSIVE){
+			line->setFlags(MODIFIED);  // E -> M
 		}else{ // M or E state
 			busAction = NONE;
 		}
@@ -404,7 +406,7 @@ ulong Cache::Dragon_snoop_handle(ulong busAction, cacheLine * line){
 	if(line != NULL){// snoop bus action on addr that I have valid copy in my cache
 		status = line->getFlags();
 		// busAction dominates, not state in my implementation
-		if(BusRd){
+		if(busAction == BusRd){
 			COPIES_EXIST = 1;
 			if(status == EXCLUSIVE){
 				line->setFlags(SHARED_CLEAN); // E -> Sc
@@ -413,17 +415,24 @@ ulong Cache::Dragon_snoop_handle(ulong busAction, cacheLine * line){
 				line->setFlags(SHARED_MODIFIED); // M -> Sm
 				iterv_cnt++;
 				snoopReaction = Flush;
-			}else if(status == SHARED_MODIFIED){
+				// writeBacks++;
+				// mem_trans_cnt++;
+				// flushes_cnt++;
+			}else if(status == SHARED_MODIFIED){ // Sm -> Sm
 				snoopReaction = Flush;
+				// writeBacks++;
+				// mem_trans_cnt++;
+				// flushes_cnt++;
 			}
-		}else if(BusUpd){
+		}else if(busAction == BusUpd){
+			COPIES_EXIST = 1;
 			if(status == SHARED_CLEAN){ // Sc -> Sc, Update
 				// picked up a word to update my cache line
-				c2c_cnt++;
+				// c2c_cnt++;
 			}else if(status == SHARED_MODIFIED){ 
 				line->setFlags(SHARED_CLEAN); // Sm -> Sc, Update
 				// picked up a word to update my cache line
-				c2c_cnt++;
+				// c2c_cnt++;
 			}
 		}else{
 			printf("invalid bus action: %lu in Dragon\n", busAction);
@@ -446,7 +455,9 @@ void Cache::snoopReaction(ulong busReaction){
 			c2c_FLAG = 1;
 		}
 	}else if(protocol == 2){ // Dragon
-		
+		if(busReaction == Flush){
+			flushes_cnt++;
+		}
 	}else{
 		printf("undefined protocol: %d\n", protocol);
 		exit(0);
@@ -496,6 +507,7 @@ ulong Cache::proc_handle(ulong addr){
 					line->setFlags(SHARED_CLEAN); //nowhere -> Sc
 				}else{
 					line->setFlags(EXCLUSIVE); // nowhere -> E
+					// mem_trans_cnt++;
 				}
 			}else{
 				printf("read miss handling but cache line not valid.\n");
@@ -522,4 +534,30 @@ ulong Cache::proc_handle(ulong addr){
 		}
 	}
 	return post; // designed only for Dragon in nowhere -> Sm condition posting BusUpd
+}
+
+int Cache::printCache(int idx, uchar op, ulong addr){
+	int ret = 0;
+	for(unsigned int i=0; i<sets; i++){
+		for(unsigned int j=0; j<assoc; j++){
+			if(cache[i][j].isValid() && cache[i][j].getTag() == calcTag(addr)){
+				int tmp = cache[i][j].getFlags();
+				string name;
+				if(tmp == SHARED){
+					name = "S";
+				}else if(tmp == EXCLUSIVE){
+					name = "E";
+				}else if(tmp == MODIFIED){
+					name = "M";
+				}else if(tmp == SHARED_MODIFIED){
+					name = "Sm";
+				}else if(tmp == SHARED_CLEAN){
+					name = "Sc";
+				}
+				printf("(%d) %c addr: %08lx, %2s ", idx, op, cache[i][j].getTag(), name.c_str() );
+				ret = 1;
+			}
+		}
+	} 
+	return ret;
 }
