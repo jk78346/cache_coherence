@@ -1,12 +1,12 @@
 #!bin/bash
 # ===== configuration =====
-GRID="0" # gird testing or fix number testing as above
+GRID="1" # gird testing or fix number testing as above
 CACHE_SIZE="8192"
 CACHE_ASSOC="8"
 BLK_SIZE="64"
 PROC="4"
 declare -a PROTOS=("0" "1" "2") # 0:MSI, 1:MESI, 2:Dragon
-declare -a DATASET=("../trace/canneal.04t.debug" "../trace/canneal.04t.longTrace")
+declare -a DATASET=( "../trace/canneal.04t.longTrace") #"../trace/canneal.04t.debug"
 # =========================
 declare -a SIZES=("262144" "524288" "1048576" "2097152") # 256KB, 512KB, 1MB, 2MB @ 8-way, 64B
 declare -a ASSOCS=("4" "8" "16") # 4-way, 8-way, 16-way @ 1MB, 64B
