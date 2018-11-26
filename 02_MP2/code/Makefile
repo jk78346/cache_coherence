@@ -83,8 +83,10 @@ n=1
 p=0
 # r=3009230
 # f=./datasets/RMAT/RMAT22
-r=6
-f=./datasets/test/test.txt
+# r=6
+# f=./datasets/test/test.txt
+r=3120
+f=./datasets/facebook/facebook_combined.txt
 
 
 run: test

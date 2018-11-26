@@ -280,7 +280,7 @@ int bottomUpStepGraphCSR(struct Graph* graph, struct Bitmap* bitmapCurr, struct 
     // make sure you set shared and private variables correctly
     // The set bit needs to be atomic operation
     // since each v is updating its own parent you will notices no need for locks.
-
+    
     for(v=0 ; v < graph->num_vertices ; v++){
                 out_degree = graph->inverse_vertices[v].out_degree;
                 if(graph->parents[v] < 0){ 
