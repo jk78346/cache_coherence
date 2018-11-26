@@ -56,8 +56,15 @@ The need for parallel and massively parallel computers. Taxonomy of parallel com
         * `main.c` - **your parallel/serial BFS called here**
     * `Makefile` - a file that compiles the base code
   * `doc` - Documents describes the Machine Problem
-* `03_FinalProject`
-  * `to be added`
+* `03_FinalProject` - Machine Problem 3
+  * `code` - base code for the problem
+    * `trace`- trace data set
+    * `val.v2` - validation data sets for the code
+    * `src` - source code resides in this directory
+        * `cache.cc`
+        * `cache.h.cc`
+        * `main.cc`
+        * `Makefile` 
 
 ## Details
 This will be added later.
