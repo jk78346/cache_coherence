@@ -27,7 +27,7 @@ You will be provided with a working C++ class for a uni core system cache, namel
 For this problem, you are supposed to implement MSI, MESI, and Dragon coherence protocols and to match the validation runs given to you exactly. Your simulator should accept multiple arguments that specify different attributes of the multiprocessor system. One of these attributes is the coherence protocol being used. In other words, your simulator should be able to generate one binary that works with all coherence protocols. More description about the input arguments is provided in later section.
 ### Report
 For this problem, you will experiment with various cache configurations and measure the cache performance with fixed number of processors. The cache configurations that you should try are:
-*Cache size: vary from 256KB, 512KB, 1MB, 2MB while keeping the cache associativity at 8 and block size at 64B.
+* Cache size: vary from 256KB, 512KB, 1MB, 2MB while keeping the cache associativity at 8 and block size at 64B.
 * Cache associativity: vary from 4‐way, 8‐way, and 16‐way while keeping the cache size at 1MB and block size at 64B. 
 * Cache block size: vary from 64B, 128B, and 256B, while keeping the cache size at 1MB and cache associativity at 8 way. 
 * Cache policies: use write back and write allocate policy, and use LRU replacement policy for all cases. (both are already implemented in the provided code) 
@@ -106,11 +106,11 @@ zip unityID.zip *.cc *.h Makefile report.pdf
  
  ## Grading Policy
 Grade will be distributed as follows: 
-25%: MSI 
-25%: MESI 
-25%: Dragon 
-10%: Three secret runs (one for each protocol) 
-15%: Report
+* 25%: MSI 
+* 25%: MESI 
+* 25%: Dragon 
+* 10%: Three secret runs (one for each protocol) 
+* 15%: Report
 
 * If your output does not ‐exactly‐ match any validation run, you will be given only 10% for that part. (Instead of 25%) 
 * If your output does not match the secret runs, you will get 0% for that part. 
